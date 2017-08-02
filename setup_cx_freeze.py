@@ -26,28 +26,12 @@ import time
 from cx_Freeze import Executable, hooks, setup
 from distutils.sysconfig import get_python_lib
 
-
-##############################################################################
-# Workarounds
-
-
-# XXX: Attempt to fix an issue with compilation
-
-
-# https://stackoverflow.com/a/34696614
-#os.environ.setdefault('MSYSTEM', 'MINGW32')
-
-
-# XXX: Monkey patch hooks for cx-freeze<5.0
-
-
 # https://bitbucket.org/anthony_tuininga/cx_freeze/issues/43
 try:
     import numpy   # noqa
     import scipy   # noqa
 except ImportError:
     pass
-
 
 # https://stackoverflow.com/a/29286081
 # https://bitbucket.org/anthony_tuininga/cx_freeze/pull-requests/64
@@ -80,11 +64,6 @@ def load_scipy(finder, module):
 
 hooks.load_h5py = load_h5py
 hooks.load_scipy = load_scipy
-
-
-##############################################################################
-# Configuration
-
 
 class opt(object):  # noqa
 
@@ -143,7 +122,7 @@ class opt(object):  # noqa
     ]
     upgrade = False
     version = time.strftime('%y.%j.%H%M', time.gmtime())
-
+    
     python_dir = os.path.dirname(sys.executable)
     build_dir = os.path.join('build', 'exe.%s-%s' % (sys.platform, '%s.%s' % sys.version_info[:2]))
     inject = [
@@ -153,56 +132,55 @@ class opt(object):  # noqa
         'analyser_custom_settings.pyc',
     ]
 
-
 # XXX: Compatibility issue with ipython (jsonschema) on Python 2.7:
 if sys.version_info.major == 2:
-    opt.excludes += ['collections.abc', 'collections.sys']
-
-
-# TODO - Should be done something like this
-#  - http://www.davidfischer.name/2010/01/extending-distutils-for-repeatable-builds/
-filtered = []
-for arg in sys.argv:
-    if arg == '--community':
-        opt.edition = 'Community'
-    elif arg == '--full':
-        opt.edition = 'Full'
-    elif arg == '--plotter':
-        opt.edition = 'Plotter'
-    elif arg == '--upgrade':
-        opt.upgrade = True
-    else:
-        filtered.append(arg)
-sys.argv = filtered
-
-# Setup the internal PyPI URIs and pip upgrade the required packages.
-if opt.upgrade:
-    if platform.system().lower() == 'windows':
-        path0 = os.path.join(os.environ['APPDATA'], 'pip', 'pip.ini')
-        path1 = os.path.expanduser('~/pydistutils.cfg')
-    else:
-        path0 = os.path.expanduser('~/.pip/pip.conf')
-        path1 = os.path.expanduser('~/.pydistutils.cfg')
-
-    try:
-        os.makedirs(os.path.dirname(path0))
-    except OSError:
-        pass
-
-    index = 'https://pypi.flightdataservices.com/simple/'
-    open(path0, 'w').write('[global]\nindex-url = %s\n' % index)
-    open(path1, 'w').write('[easy_install]\nindex_url = %s\n' % index)
-
-    print('Upgrading packages: %s' % ' '.join(opt.packages))
-    # XXX: Workaround for missing upgrade only-if-needed. See following links:
-    #      - https://github.com/pypa/pip/issues/59
-    #      - https://pip.pypa.io/en/stable/user_guide/#only-if-needed-recursive-upgrade
-    command = shlex.split('python -m pip install --disable-pip-version-check --pre')
-    subprocess.call(command + ['--no-deps', '--upgrade'] + opt.packages)
-    subprocess.call(command + opt.packages)
-
-
-##############################################################################
+    opt.excludes += ['collections.abc', 'collections.sys']    
+    
+    # TODO - Should be done something like this
+    #  - http://www.davidfischer.name/2010/01/extending-distutils-for-repeatable-builds/
+    filtered = []
+    for arg in sys.argv:
+        if arg == '--community':
+            opt.edition = 'Community'
+        elif arg == '--full':
+            opt.edition = 'Full'
+        elif arg == '--plotter':
+            opt.edition = 'Plotter'
+        elif arg == '--upgrade':
+            opt.upgrade = True
+        else:
+            filtered.append(arg)
+    sys.argv = filtered
+    
+    # Setup the internal PyPI URIs and pip upgrade the required packages.
+    if opt.upgrade:
+        if platform.system().lower() == 'windows':
+            path0 = os.path.join(os.environ['APPDATA'], 'pip', 'pip.ini')
+            path1 = os.path.expanduser('~/pydistutils.cfg')
+        else:
+            path0 = os.path.expanduser('~/.pip/pip.conf')
+            path1 = os.path.expanduser('~/.pydistutils.cfg')
+    
+        try:
+            os.makedirs(os.path.dirname(path0))
+        except OSError:
+            pass
+    
+        index = 'https://pypi.flightdataservices.com/simple/'
+        open(path0, 'w').write('[global]\nindex-url = %s\n' % index)
+        open(path1, 'w').write('[easy_install]\nindex_url = %s\n' % index)
+    
+        print('Upgrading packages: %s' % ' '.join(opt.packages))
+        # XXX: Workaround for missing upgrade only-if-needed. See following links:
+        #      - https://github.com/pypa/pip/issues/59
+        #      - https://pip.pypa.io/en/stable/user_guide/#only-if-needed-recursive-upgrade
+        command = shlex.split('python -m pip install --disable-pip-version-check --pre')
+        subprocess.call(command + ['--no-deps', '--upgrade'] + opt.packages)
+        subprocess.call(command + opt.packages)
+    
+    
+    ##############################################################################    
+    
 # Helpers
 
 
@@ -213,7 +191,6 @@ lookup = lambda *a: os.path.join(site_packages, *a)
 
 ##############################################################################
 # Executables
-
 
 # NOTE:
 # - 'compiler' is required by anything using 'data_validation'.
@@ -230,53 +207,53 @@ protected = ['analyser_custom_hooks', 'analyser_custom_settings', 'data_validati
 ConvertAGS = Executable(
     path=[lookup('lflconversion', 'fds_lfl')] + sys.path,
     script=lookup('lflconversion', 'fds_lfl', 'converter.py'),
-    targetName='ConvertAGS.exe',
+    targetName='ConvertAGS',
     excludes=opt.excludes + no_api + no_doc + no_gui + no_test + ['bz2', 'compiler', 'logging'],
 )
 
 ConvertGRAF = Executable(
     path=[lookup('lflconversion', 'graf')] + sys.path,
     script=lookup('lflconversion', 'graf', 'convert.py'),
-    targetName='ConvertGRAF.exe',
+    targetName='ConvertGRAF',
     excludes=opt.excludes + no_api + no_doc + no_gui + no_test + ['bz2', 'compiler', 'logging'],
 )
 
 FlightDataReadoutValidator = Executable(
     path=[lookup('lflconversion', 'tools')] + sys.path,
     script=lookup('lflconversion', 'tools', 'check_names.py'),
-    targetName='FlightDataReadoutValidator.exe',
+    targetName='FlightDataReadoutValidator',
     excludes=opt.excludes + ['bz2', 'compiler'],
     packages=['scipy.integrate'],
 )
 
 LFLValidator = Executable(
     script=lookup('wingide', 'lfl_panel_output.py'),
-    targetName='LFLValidator.exe',
+    targetName='LFLValidator',
     excludes=opt.excludes + no_api + no_doc + no_gui + no_test + ['bz2', 'compiler', 'h5py', 'Image', 'IPython', 'PIL', 'simplejson', 'xml'],
 )
 
 FlightDataBitstreamAligner = Executable(
     script=lookup('filterpypefds', 'process_bitstream_file.py'),
-    targetName='FlightDataBitstreamAligner.exe',
+    targetName='FlightDataBitstreamAligner',
     excludes=opt.excludes + no_api + no_doc + no_gui + no_test + ['compiler', 'hotshot', 'logging', 'xml'],
 )
 
 FlightDataAligner = Executable(
     script=lookup('filterpypefds', 'byte_align.py'),
-    targetName='FlightDataAligner.exe',
+    targetName='FlightDataAligner',
     excludes=opt.excludes + no_api + no_doc + no_gui + no_test + ['compiler', 'hotshot', 'logging', 'xml'],
 )
 
 FlightDataConverter = Executable(
     script=lookup('compass', 'compass_cli.py'),
-    targetName='FlightDataConverter.exe',
+    targetName='FlightDataConverter',
     excludes=opt.excludes + no_api + no_doc + no_gui + no_test + ['compiler', 'Image', 'IPython', 'PIL', 'xml'],
     includes=['scipy.linalg'],
 )
 
 FlightDataConverter767 = Executable(
     script=lookup('compass', 'arinc767', 'arinc767.py'),
-    targetName='FlightDataConverter767.exe',
+    targetName='FlightDataConverter767',
     excludes=opt.excludes + no_api + no_doc + no_gui + no_test + ['compiler', 'Image', 'IPython', 'PIL'],
     includes=['lxml._elementpath', 'scipy.linalg'],
 )
@@ -284,14 +261,14 @@ FlightDataConverter767 = Executable(
 FlightDataCleanser = Executable(
     path=[lookup('data_validation')] + sys.path,
     script=lookup('data_validation', 'validate_file.py'),
-    targetName='FlightDataCleanser.exe',
+    targetName='FlightDataCleanser',
     excludes=opt.excludes + no_doc + no_gui + no_test + ['Image', 'IPython', 'jinja2', 'osgeo', 'PIL', 'xml'],
     packages=['analysis_engine', 'data_validation', 'scipy.integrate.vode'],
 )
 
 FlightDataSplitter = Executable(
     script=lookup('analysis_engine', 'split_hdf_to_segments.py'),
-    targetName='FlightDataSplitter.exe',
+    targetName='FlightDataSplitter',
     excludes=opt.excludes + no_doc + no_gui + no_test + ['Image', 'IPython', 'osgeo', 'PIL', 'simplekml', 'xml'],
     includes=['scipy.signal.sigtools'],
     packages=['analysis_engine'],
@@ -299,7 +276,7 @@ FlightDataSplitter = Executable(
 
 FlightDataAnalyzer = Executable(
     script=lookup('analysis_engine', 'process_flight.py'),
-    targetName='FlightDataAnalyzer.exe',
+    targetName='FlightDataAnalyzer',
     excludes=opt.excludes + no_doc + no_gui + no_test + ['Image', 'IPython', 'jinja2', 'lib2to3', 'osgeo', 'PIL'],
     includes=['matplotlib.backends.backend_wxagg', 'scipy.integrate.vode', 'scipy.integrate.lsoda'],
     packages=['analysis_engine'],
@@ -308,7 +285,7 @@ FlightDataAnalyzer = Executable(
 FlightDataParameterTree = Executable(
     path=[lookup('flightdataparametertree')] + sys.path,
     script=lookup('flightdataparametertree', 'server.py'),
-    targetName='FlightDataParameterTree.exe',
+    targetName='FlightDataParameterTree',
     excludes=opt.excludes + no_doc + no_gui + no_test + protected + ['compiler', 'Image', 'IPython', 'osgeo', 'PIL'],
     includes=['flightdatautilities.browser'],
     packages=['analysis_engine', 'scipy.integrate'],
@@ -316,7 +293,7 @@ FlightDataParameterTree = Executable(
 
 FlightDataPlotter = Executable(
     script=lookup('flightdataplotter', 'plot_params.py'),
-    targetName='FlightDataPlotter.exe',
+    targetName='FlightDataPlotter',
     excludes=opt.excludes + no_api + no_doc + no_test + ['compiler', 'IPython', 'lib2to3', 'PIL'],
     includes=['matplotlib.backends.backend_wxagg'],
     packages=['scipy.integrate'],
@@ -324,7 +301,7 @@ FlightDataPlotter = Executable(
 
 FlightDataPlotGenerator = Executable(
     script=lookup('flightdataplotgenerator', 'plot_params_to_file.py'),
-    targetName='FlightDataPlotGenerator.exe',
+    targetName='FlightDataPlotGenerator',
     excludes=opt.excludes + no_doc + no_gui + no_test + ['IPython', 'lib2to3', 'PIL'],
     includes=['matplotlib.backends.backend_wxagg'],
     packages=['scipy.integrate'],
@@ -332,26 +309,26 @@ FlightDataPlotGenerator = Executable(
 
 FlightDataProcessing = Executable(
     script=lookup('flightdataprocessing', '__main__.py'),
-    targetName='FlightDataProcessing.exe',
+    targetName='FlightDataProcessing',
     excludes=opt.excludes + no_api + no_doc + no_gui + no_test + ['compiler', 'Image', 'IPython', 'PIL', 'xml'],
 )
 
 FlightDataSignalFinder = Executable(
     script=lookup('flightdataplotgenerator', 'plot_words_to_file_autonomous.py'),
-    targetName='FlightDataSignalFinder.exe',
+    targetName='FlightDataSignalFinder',
     excludes=opt.excludes + no_api + no_doc + no_gui + no_test + ['IPython', 'lib2to3', 'PIL'],
     includes=['matplotlib.backends.backend_wxagg', 'scipy.integrate.vode', 'scipy.integrate.lsoda'],
 )
 
 FlightDataVersion = Executable(
     script=lookup('utilities', 'polaris_version.py'),
-    targetName='FlightDataVersion.exe',
+    targetName='FlightDataVersion',
     excludes=opt.excludes + no_api + no_doc + no_gui + no_test + ['bz2', 'compiler', 'logging'],
 )
 
 FlightDataRunner = Executable(
     script=lookup('flightdatarunner', 'local_runner.py'),
-    targetName='FlightDataRunner.exe',
+    targetName='FlightDataRunner',
     excludes=opt.excludes + no_gui + no_test + ['IPython', 'osgeo', 'PIL'],
     includes=['lxml.etree', 'lxml._elementpath', 'matplotlib.backends.backend_wxagg', 'scipy.integrate', 'scipy.signal.sigtools'],
     packages=['analysis_engine', 'compass', 'data_exports', 'polarisconfiguration', 'data_validation', 'flightdataaircrafttables', 'flightdataprofiles', 'pkg_resources._vendor.packaging', 'scipy.integrate', 'scipy.signal'],
@@ -359,18 +336,19 @@ FlightDataRunner = Executable(
 
 FlightDataHDFValidator = Executable(
     script=lookup('hdfaccess', 'tools', 'hdfvalidator.py'),
-    targetName='FlightDataHDFValidator.exe',
+    targetName='FlightDataHDFValidator',
     excludes=opt.excludes + no_doc + no_gui + no_test + ['compiler', 'Image', 'IPython', 'PIL', 'xml'],
     packages=['analysis_engine'],
 )
 
 ##############################################################################
+
 # Defaults
 
 # Prepare default build options for all editions:
 
 
-build_icon = 'FDS-icon-55x55x256.bmp'
+#build_icon = 'FDS-icon-55x55x256.bmp'
 
 executables = [
     FlightDataAnalyzer,
@@ -390,14 +368,15 @@ include_files = [
     (lookup('flightdataparametertree', 'templates'), 'templates'),
     (lookup('geomag', 'WMM.COF'), os.path.join('geomag', 'WMM.COF')),
     (requests.certs.where(), 'cacert.pem'),
-    ('icons', 'icons'),
-    os.path.dirname(lib2to3.__file__), # Fixes IOError: [Errno 2] No such file or directory: 'C:\\Program Files (x86)\\FlightDataServices\\POLARIS-Suite\\FlightDataRunner.exe\\lib2to3\\Grammar.txt'
+    #('icons', 'icons'),
+    (os.path.join(os.path.dirname(lib2to3.__file__), 'Grammar.txt'), 'Grammar.txt'), # Fixes IOError: [Errno 2] No such file or directory: 'C:\\Program Files (x86)\\FlightDataServices\\POLARIS-Suite\\FlightDataRunner.exe\\lib2to3\\Grammar.txt'
 ]
 
 password = ''
 
 
 ##############################################################################
+
 # Editions
 
 
@@ -462,10 +441,10 @@ elif opt.edition == 'Plotter':
         LFLValidator,
     ]
 
-    include_files = [
-        # (requests.certs.where(), 'cacert.pem'),
-        ('icons', 'icons'),
-    ]
+    #include_files = [
+        ## (requests.certs.where(), 'cacert.pem'),
+        #('icons', 'icons'),
+    #]
 
     build_suffix = 'PE'
 
@@ -483,6 +462,7 @@ else:
 
 
 ##############################################################################
+    
 # Setup
 
 
@@ -503,61 +483,62 @@ setup(
         'build_exe': {
             'excludes': opt.excludes,
             'include_files': include_files,
-            'include_msvcr': True,
+            #'include_msvcr': True,
             'optimize': 0,
             'compressed': opt.compress,
             'append_script_to_exe': True,
             'create_shared_zip': False,
             'include_in_shared_zip': False,
             'copy_dependent_files': True,
-            'icon': 'icons/POLARIS.ico',
+           # 'icon': 'icons/POLARIS.ico',
             'silent': True,
         },
-        'install_exe': {
-            'force': True,
-        },
-        'bdist_msi': {
-            'add_to_path': True,
-            'upgrade_code': 'POLARIS-Suite',
+        #'install_exe': {
+            #'force': True,
+        #},
+        'bdist_dmg': {
+            #'add_to_path': True,
+            'bundle_name': 'POLARIS-Suite',
         },
     },
     executables=executables,
 )
 
 
-##############################################################################
+##############################################################################    
+
 # Installer
 
 
-if opt.installer:
+#if opt.installer:
 
-    # Populate the substitutions used in the templates:
-    substitutions = {
-        'python_dir': opt.python_dir,
-        'build_dir': opt.build_dir,
-        'build_edition': opt.edition,
-        'build_icon': build_icon,
-        'build_suffix': build_suffix,
-        'password': password,
-        'version': opt.version,
-    }
+    ## Populate the substitutions used in the templates:
+    #substitutions = {
+        #'python_dir': opt.python_dir,
+        #'build_dir': opt.build_dir,
+        #'build_edition': opt.edition,
+##        'build_icon': build_icon,
+        #'build_suffix': build_suffix,
+        #'password': password,
+        #'version': opt.version,
+    #}
 
-    # Make suite shell command prompt script from template:
-    tn = os.path.join('templates', '%s-Shell.template' % build_suffix)
-    sn = os.path.join(opt.build_dir, 'POLARIS-Shell.cmd')
-    with open(tn, 'r') as tf, open(sn, 'w') as sf:
-        template = string.Template(tf.read())
-        sf.write(template.substitute(substitutions))
+    ## Make suite shell command prompt script from template:
+    #tn = os.path.join('templates', '%s-Shell.template' % build_suffix)
+    #sn = os.path.join(opt.build_dir, 'POLARIS-Shell.cmd')
+    #with open(tn, 'r') as tf, open(sn, 'w') as sf:
+        #template = string.Template(tf.read())
+        #sf.write(template.substitute(substitutions))
 
     # Make suite installer generator script from template:
-    tn = os.path.join('templates', 'iss.template')
-    sn = '%s.iss' % build_suffix
-    with open(tn, 'r') as tf, open(sn, 'w') as sf:
-        template = string.Template(tf.read())
-        sf.write(template.substitute(substitutions))
+    #tn = os.path.join('templates', 'iss.template')
+    #sn = '%s.iss' % build_suffix
+    #with open(tn, 'r') as tf, open(sn, 'w') as sf:
+        #template = string.Template(tf.read())
+        #sf.write(template.substitute(substitutions))
 
     # Execute the installer building application:
-    iscc = os.path.join('C:\\', 'Program Files', 'Inno Setup 5', 'ISCC.exe')
-    if os.path.isfile(iscc):
-        subprocess.call([iscc, '%s.iss' % build_suffix])
-    os.remove(build_suffix + '.iss')
+    #iscc = os.path.join('C:\\', 'Program Files', 'Inno Setup 5', 'ISCC.exe')
+    #if os.path.isfile(iscc):
+        #subprocess.call([iscc, '%s.iss' % build_suffix])
+    #os.remove(build_suffix + '.iss')
