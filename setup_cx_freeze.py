@@ -1,3 +1,5 @@
+
+
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 # vim:et:ft=python:nowrap:sts=4:sw=4:ts=4
@@ -22,9 +24,13 @@ import string
 import subprocess
 import sys
 import time
+import appdirs, packaging
+import opcode
 
 from cx_Freeze import Executable, hooks, setup
 from distutils.sysconfig import get_python_lib
+
+distutils_path = os.path.join(os.path.dirname(opcode.__file__), 'distutils')
 
 # https://bitbucket.org/anthony_tuininga/cx_freeze/issues/43
 try:
@@ -94,6 +100,7 @@ class opt(object):  # noqa
         'tcl',
         'test',
         'tk',
+        'distutils'
     ]
     installer = (platform.system().lower() == 'darwin')
     packages = [
@@ -370,6 +377,7 @@ include_files = [
     (requests.certs.where(), 'cacert.pem'),
     #('icons', 'icons'),
     (os.path.join(os.path.dirname(lib2to3.__file__), 'Grammar.txt'), 'Grammar.txt'), # Fixes IOError: [Errno 2] No such file or directory: 'C:\\Program Files (x86)\\FlightDataServices\\POLARIS-Suite\\FlightDataRunner.exe\\lib2to3\\Grammar.txt'
+    (os.path.join(os.path.dirname(opcode.__file__), 'distutils'), 'distutils'),
 ]
 
 password = ''
